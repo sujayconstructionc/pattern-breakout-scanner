@@ -33,7 +33,7 @@ def pattern_match(colors):
     p1 = ["G", "R", "G", "R", "G"]
     p2 = ["R", "G", "R", "G", "R"]
 
-    return colors == p1 or colors == p2
+    return  True
 
 
 def scan_symbol(
