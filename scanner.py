@@ -35,10 +35,8 @@ try:
 
         if row["Close"] > row["Open"]:
             colors.append("G")
-
         elif row["Close"] < row["Open"]:
             colors.append("R")
-
         else:
             colors.append("D")
 
