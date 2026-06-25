@@ -21,6 +21,13 @@ exchange = st.sidebar.selectbox(
 )
 
 breakout_mode = st.sidebar.radio(
+    scan_mode = st.sidebar.radio(
+    "Scan Mode",
+    [
+        "Pattern Only",
+        "Pattern + Breakout"
+    ]
+)
     "Breakout Type",
     ["Close", "High"]
 )
