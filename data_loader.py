@@ -1,37 +1,25 @@
 import pandas as pd
 
+
 def get_nse_symbols():
-    """
-    Demo NSE list.
-    बाद में full NSE universe जोड़ेंगे.
-    """
-    return [
-        "RELIANCE.NS",
-        "TCS.NS",
-        "INFY.NS",
-        "HDFCBANK.NS",
-        "ICICIBANK.NS",
-        "SBIN.NS",
-        "LT.NS",
-        "BHARTIARTL.NS",
-        "ITC.NS",
-        "AXISBANK.NS"
-    ]
+
+    try:
+
+        df = pd.read_csv("nse_symbols.csv")
+
+        return [
+            f"{x}.NS"
+            for x in df["SYMBOL"].dropna().tolist()
+        ]
+
+    except Exception:
+
+        return []
 
 
 def get_bse_symbols():
-    """
-    Demo BSE list.
-    बाद में full BSE universe जोड़ेंगे.
-    """
-    return [
-        "RELIANCE.BO",
-        "TCS.BO",
-        "INFY.BO",
-        "HDFCBANK.BO",
-        "ICICIBANK.BO",
-        "SBIN.BO"
-    ]
+
+    return []
 
 
 def get_symbols(exchange):
@@ -43,6 +31,9 @@ def get_symbols(exchange):
         return get_bse_symbols()
 
     elif exchange == "NSE+BSE":
-        return get_nse_symbols() + get_bse_symbols()
+        return (
+            get_nse_symbols()
+            + get_bse_symbols()
+        )
 
     return []
