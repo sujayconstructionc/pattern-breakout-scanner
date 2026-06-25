@@ -1,5 +1,4 @@
 def scan_pattern_only(symbol):
-    ...
 
     try:
 
@@ -22,9 +21,9 @@ def scan_pattern_only(symbol):
 
         results = []
 
-        for i in range(5, len(df)+1):
+        for i in range(5, len(df) + 1):
 
-            block = df.iloc[i-5:i]
+            block = df.iloc[i - 5:i]
 
             colors = block["Color"].tolist()
 
