@@ -39,7 +39,7 @@ max_stocks = st.sidebar.number_input(
     "Max Stocks To Scan",
     min_value=1,
     max_value=500,
-    value=20
+    value=100
 )
 
 scan = st.sidebar.button("SCAN NOW")
