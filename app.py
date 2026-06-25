@@ -38,8 +38,8 @@ breakout_mode = st.sidebar.radio(
 max_stocks = st.sidebar.number_input(
     "Max Stocks To Scan",
     min_value=1,
-    max_value=500,
-    value=100
+    max_value=3000,
+    value=500
 )
 
 scan = st.sidebar.button("SCAN NOW")
