@@ -9,25 +9,15 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📈 Pattern Breakout Scanner")
+st.title("📈 Pattern Breakout Scanner (DEBUG MODE)")
 
-st.sidebar.header("Scanner Filters")
+# =====================
+# SIDEBAR
+# =====================
 
 exchange = st.sidebar.selectbox(
     "Exchange",
     ["NSE", "BSE", "NSE+BSE"]
-)
-
-market_cap_min = st.sidebar.number_input(
-    "Min Market Cap (Cr)",
-    min_value=0,
-    value=300
-)
-
-market_cap_max = st.sidebar.number_input(
-    "Max Market Cap (Cr)",
-    min_value=0,
-    value=20000
 )
 
 breakout_mode = st.sidebar.radio(
@@ -39,53 +29,96 @@ max_stocks = st.sidebar.number_input(
     "Max Stocks To Scan",
     min_value=1,
     max_value=3000,
-    value=500
+    value=100
 )
 
 scan = st.sidebar.button("SCAN NOW")
 
-st.info(
-    "Monthly Pattern Scanner (Testing Version)"
-)
+# =====================
+# SCAN
+# =====================
 
 if scan:
 
-    symbols = get_symbols(exchange)
+    st.info("Loading symbols...")
+
+    try:
+
+        symbols = get_symbols(exchange)
+
+        st.success(
+            f"Symbols Loaded = {len(symbols)}"
+        )
+
+        st.write(
+            "First 10 Symbols:",
+            symbols[:10]
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Symbol Load Error: {e}"
+        )
+
+        st.stop()
 
     symbols = symbols[:max_stocks]
+
+    st.write(
+        f"Scanning First {len(symbols)} Stocks"
+    )
 
     results = []
 
     progress = st.progress(0)
 
+    debug_errors = []
+
     total = len(symbols)
 
     for i, symbol in enumerate(symbols):
 
-        rows = scan_symbol(
-            symbol=symbol,
-            breakout_mode=breakout_mode
-        )
+        try:
 
-        results.extend(rows)
+            rows = scan_symbol(
+                symbol=symbol,
+                breakout_mode=breakout_mode
+            )
+
+            results.extend(rows)
+
+        except Exception as e:
+
+            debug_errors.append(
+                f"{symbol} -> {e}"
+            )
 
         progress.progress(
             (i + 1) / total
         )
 
-    if len(results) == 0:
+    st.success(
+        f"Scan Completed"
+    )
+
+    st.write(
+        f"Total Results Found = {len(results)}"
+    )
+
+    if len(debug_errors):
 
         st.warning(
-            "No pattern found"
+            f"Errors Found = {len(debug_errors)}"
         )
 
-    else:
+        st.write(
+            debug_errors[:20]
+        )
+
+    if len(results):
 
         df = pd.DataFrame(results)
-
-        st.success(
-            f"{len(df)} Signals Found"
-        )
 
         st.dataframe(
             df,
@@ -101,4 +134,10 @@ if scan:
             csv,
             file_name="scanner_results.csv",
             mime="text/csv"
+        )
+
+    else:
+
+        st.error(
+            "No pattern found"
         )
