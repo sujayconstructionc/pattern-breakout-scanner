@@ -56,7 +56,7 @@ if scan:
     try:
 
         symbols = get_symbols(exchange)
-
+        symbols = ["RELIANCE.NS"]
         st.success(
             f"Symbols Loaded = {len(symbols)}"
         )
