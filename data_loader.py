@@ -1,24 +1,32 @@
 import pandas as pd
+import streamlit as st
 
-
+@st.cache_data(ttl=86400)
 def get_nse_symbols():
+
+    url = "https://archives.nseindia.com/content/equities/EQUITY_L.csv"
 
     try:
 
-        df = pd.read_csv("nse_symbols.csv")
+        df = pd.read_csv(url)
 
-        return [
-            f"{x}.NS"
-            for x in df["SYMBOL"].dropna().tolist()
-        ]
+        symbols = (
+            df["SYMBOL"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
 
-    except Exception:
+        return [f"{s}.NS" for s in symbols]
 
+    except Exception as e:
+
+        print(e)
         return []
 
 
 def get_bse_symbols():
-
     return []
 
 
@@ -31,9 +39,6 @@ def get_symbols(exchange):
         return get_bse_symbols()
 
     elif exchange == "NSE+BSE":
-        return (
-            get_nse_symbols()
-            + get_bse_symbols()
-        )
+        return get_nse_symbols() + get_bse_symbols()
 
     return []
