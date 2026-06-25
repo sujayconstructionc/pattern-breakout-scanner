@@ -2,76 +2,100 @@ import streamlit as st
 import pandas as pd
 
 from data_loader import get_symbols
+
 from scanner import (
     scan_symbol,
     scan_pattern_only
 )
 
 st.set_page_config(
-    page_title="Pattern Breakout Scanner",
+    page_title="Pattern Breakout Scanner V2",
     layout="wide"
 )
 
-st.title("📈 Pattern Breakout Scanner (DEBUG MODE)")
+st.title("📈 Pattern Breakout Scanner V2")
 
-# =====================
+# =========================
 # SIDEBAR
-# =====================
+# =========================
+
+st.sidebar.header("Scanner Filters")
 
 exchange = st.sidebar.selectbox(
     "Exchange",
-    ["NSE", "BSE", "NSE+BSE"]
+    [
+        "NSE",
+        "BSE",
+        "NSE+BSE"
+    ]
 )
 
-scan_mode = st.sidebar.radio(
+timeframe = st.sidebar.selectbox(
+    "Timeframe",
+    [
+        "Monthly",
+        "Quarterly",
+        "6 Month"
+    ]
+)
+
+scan_mode = st.sidebar.selectbox(
     "Scan Mode",
     [
         "Pattern Only",
-        "Pattern + Breakout"
+        "Historical Breakout",
+        "Latest Breakout"
     ]
 )
 
 breakout_mode = st.sidebar.radio(
     "Breakout Type",
-    ["Close", "High"]
+    [
+        "Close",
+        "High"
+    ]
+)
+
+price_min = st.sidebar.number_input(
+    "Min Close Price",
+    min_value=0.0,
+    value=0.0
+)
+
+price_max = st.sidebar.number_input(
+    "Max Close Price",
+    min_value=0.0,
+    value=100000.0
 )
 
 max_stocks = st.sidebar.number_input(
     "Max Stocks To Scan",
     min_value=1,
-    max_value=3000,
+    max_value=5000,
     value=500
 )
 
-scan = st.sidebar.button("SCAN NOW")
+scan = st.sidebar.button(
+    "SCAN NOW"
+)
 
-# =====================
+# =========================
 # SCAN
-# =====================
+# =========================
 
 if scan:
 
-    st.info("Loading symbols...")
+    st.info(
+        "Loading symbols..."
+    )
 
-    try:
+    symbols = get_symbols(
+        exchange
+    )
 
-        symbols = get_symbols(exchange)
-        st.success(
-            f"Symbols Loaded = {len(symbols)}"
-        )
-
-        st.write(
-            "First 10 Symbols:",
-            symbols[:10]
-        )
-
-    except Exception as e:
-
-        st.error(
-            f"Symbol Load Error: {e}"
-        )
-
-        st.stop()
+    st.success(
+        f"Symbols Loaded = {len(symbols)}"
+    )
 
     symbols = symbols[:max_stocks]
 
@@ -79,11 +103,11 @@ if scan:
         f"Scanning First {len(symbols)} Stocks"
     )
 
-    results = []
-
     progress = st.progress(0)
 
-    debug_errors = []
+    results = []
+
+    errors = []
 
     total = len(symbols)
 
@@ -94,21 +118,37 @@ if scan:
             if scan_mode == "Pattern Only":
 
                 rows = scan_pattern_only(
-                    symbol
+                    symbol=symbol,
+                    timeframe=timeframe
+                )
+
+            elif scan_mode == "Historical Breakout":
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=False
                 )
 
             else:
 
                 rows = scan_symbol(
                     symbol=symbol,
-                    breakout_mode=breakout_mode
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=True
                 )
 
-            results.extend(rows)
+            if rows:
+
+                results.extend(
+                    rows
+                )
 
         except Exception as e:
 
-            debug_errors.append(
+            errors.append(
                 f"{symbol} -> {e}"
             )
 
@@ -124,19 +164,39 @@ if scan:
         f"Total Results Found = {len(results)}"
     )
 
-    if len(debug_errors):
+    if errors:
 
-        st.warning(
-            f"Errors Found = {len(debug_errors)}"
-        )
+        with st.expander(
+            "Show Errors"
+        ):
 
-        st.write(
-            debug_errors[:20]
-        )
+            st.write(
+                errors[:50]
+            )
 
     if len(results):
 
-        df = pd.DataFrame(results)
+        df = pd.DataFrame(
+            results
+        )
+
+        # =====================
+        # PRICE FILTER
+        # =====================
+
+        if "BreakoutPrice" in df.columns:
+
+            df = df[
+                (
+                    df["BreakoutPrice"]
+                    >= price_min
+                )
+                &
+                (
+                    df["BreakoutPrice"]
+                    <= price_max
+                )
+            ]
 
         st.dataframe(
             df,
@@ -148,14 +208,14 @@ if scan:
         )
 
         st.download_button(
-            "Download CSV",
+            "⬇ Download CSV",
             csv,
-            file_name="scanner_results.csv",
+            file_name="pattern_breakout_results.csv",
             mime="text/csv"
         )
 
     else:
 
         st.error(
-            "No pattern found"
+            "No Results Found"
         )
