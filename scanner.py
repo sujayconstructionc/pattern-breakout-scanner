@@ -1,4 +1,5 @@
 def scan_pattern_only(symbol):
+    ...
 
     try:
 
