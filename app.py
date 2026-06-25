@@ -2,7 +2,10 @@ import streamlit as st
 import pandas as pd
 
 from data_loader import get_symbols
-from scanner import scan_symbol
+from scanner import (
+    scan_symbol,
+    scan_pattern_only
+)
 
 st.set_page_config(
     page_title="Pattern Breakout Scanner",
@@ -20,14 +23,15 @@ exchange = st.sidebar.selectbox(
     ["NSE", "BSE", "NSE+BSE"]
 )
 
-breakout_mode = st.sidebar.radio(
-    scan_mode = st.sidebar.radio(
+scan_mode = st.sidebar.radio(
     "Scan Mode",
     [
         "Pattern Only",
         "Pattern + Breakout"
     ]
 )
+
+breakout_mode = st.sidebar.radio(
     "Breakout Type",
     ["Close", "High"]
 )
@@ -36,7 +40,7 @@ max_stocks = st.sidebar.number_input(
     "Max Stocks To Scan",
     min_value=1,
     max_value=3000,
-    value=100
+    value=500
 )
 
 scan = st.sidebar.button("SCAN NOW")
@@ -88,10 +92,18 @@ if scan:
 
         try:
 
-            rows = scan_symbol(
-                symbol=symbol,
-                breakout_mode=breakout_mode
-            )
+            if scan_mode == "Pattern Only":
+
+                rows = scan_pattern_only(
+                    symbol
+                )
+
+            else:
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    breakout_mode=breakout_mode
+                )
 
             results.extend(rows)
 
@@ -106,7 +118,7 @@ if scan:
         )
 
     st.success(
-        f"Scan Completed"
+        "Scan Completed"
     )
 
     st.write(
