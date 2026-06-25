@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 
+from data_loader import get_symbols
+from scanner import scan_symbol
+
 st.set_page_config(
     page_title="Pattern Breakout Scanner",
     layout="wide"
@@ -27,70 +30,75 @@ market_cap_max = st.sidebar.number_input(
     value=20000
 )
 
-price_min = st.sidebar.number_input(
-    "Min Close Price",
-    min_value=0.0,
-    value=0.0
+breakout_mode = st.sidebar.radio(
+    "Breakout Type",
+    ["Close", "High"]
 )
 
-price_max = st.sidebar.number_input(
-    "Max Close Price",
-    min_value=0.0,
-    value=100000.0
-)
-
-timeframes = st.sidebar.multiselect(
-    "Timeframes",
-    ["Monthly", "Quarterly", "6 Month"],
-    default=["Monthly"]
-)
-
-signal_type = st.sidebar.radio(
-    "Signal Type",
-    ["Latest Breakout", "Historical Signals"]
+max_stocks = st.sidebar.number_input(
+    "Max Stocks To Scan",
+    min_value=1,
+    max_value=500,
+    value=20
 )
 
 scan = st.sidebar.button("SCAN NOW")
 
 st.info(
-    "Version 1 UI Ready. Scanner engine will be connected next."
+    "Monthly Pattern Scanner (Testing Version)"
 )
 
 if scan:
 
-    sample = pd.DataFrame(
-        {
-            "Symbol": ["RELIANCE", "TCS", "INFY"],
-            "Exchange": [exchange] * 3,
-            "MarketCapCr": [18000, 15000, 12000],
-            "Timeframe": ["Monthly"] * 3,
-            "PatternDate": [
-                "2025-12-31",
-                "2025-11-30",
-                "2025-10-31"
-            ],
-            "BreakoutDate": [
-                "2026-01-31",
-                "2025-12-31",
-                "2025-11-30"
-            ],
-            "PatternHigh": [1450, 4100, 1800],
-            "Close": [1510, 4250, 1910]
-        }
-    )
+    symbols = get_symbols(exchange)
 
-    st.success(f"{len(sample)} Signals Found")
+    symbols = symbols[:max_stocks]
 
-    st.dataframe(
-        sample,
-        use_container_width=True
-    )
+    results = []
 
-    csv = sample.to_csv(index=False)
+    progress = st.progress(0)
 
-    st.download_button(
-        "Download CSV",
-        csv,
-        file_name="scanner_results.csv",
-        mime="text/csv"
-    )
+    total = len(symbols)
+
+    for i, symbol in enumerate(symbols):
+
+        rows = scan_symbol(
+            symbol=symbol,
+            breakout_mode=breakout_mode
+        )
+
+        results.extend(rows)
+
+        progress.progress(
+            (i + 1) / total
+        )
+
+    if len(results) == 0:
+
+        st.warning(
+            "No pattern found"
+        )
+
+    else:
+
+        df = pd.DataFrame(results)
+
+        st.success(
+            f"{len(df)} Signals Found"
+        )
+
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
+
+        csv = df.to_csv(
+            index=False
+        )
+
+        st.download_button(
+            "Download CSV",
+            csv,
+            file_name="scanner_results.csv",
+            mime="text/csv"
+        )
