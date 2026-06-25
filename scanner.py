@@ -30,15 +30,13 @@ def resample_monthly(df):
 
 def pattern_match(colors):
 
-    p1 = ["G", "R", "G", "R", "G"]
-    p2 = ["R", "G", "R", "G", "R"]
+    bull = ["G", "R", "G", "R", "G"]
+    bear = ["R", "G", "R", "G", "R"]
 
-    return colors == p1 or colors == p2
+    return colors == bull or colors == bear
 
 
-def scan_symbol(
-        symbol,
-        breakout_mode="Close"):
+def scan_symbol(symbol, breakout_mode="Close"):
 
     try:
 
@@ -46,13 +44,17 @@ def scan_symbol(
             symbol,
             period="15y",
             progress=False,
-            auto_adjust=True
+            auto_adjust=False
         )
 
-        if len(df) < 300:
+        if len(df) < 60:
             return []
 
         df = resample_monthly(df)
+
+        # Monthly candles 15 years ≈ 180
+        if len(df) < 10:
+            return []
 
         df["Color"] = df.apply(
             candle_color,
@@ -63,7 +65,7 @@ def scan_symbol(
 
         for i in range(5, len(df)):
 
-            block = df.iloc[i-5:i]
+            block = df.iloc[i - 5:i]
 
             colors = block["Color"].tolist()
 
@@ -96,25 +98,17 @@ def scan_symbol(
 
                     "Symbol": symbol,
 
-                    "PatternDate":
-                        block.index[-1],
+                    "PatternDate": block.index[-1],
 
-                    "BreakoutDate":
-                        breakout_date,
+                    "BreakoutDate": breakout_date,
 
-                    "PatternHigh":
-                        round(
-                            float(pattern_high),
-                            2
-                        ),
+                    "PatternHigh": round(
+                        float(pattern_high), 2
+                    ),
 
-                    "Close":
-                        round(
-                            float(
-                                breakout_price
-                            ),
-                            2
-                        )
+                    "Close": round(
+                        float(breakout_price), 2
+                    )
                 })
 
         return results
@@ -133,13 +127,16 @@ def scan_pattern_only(symbol):
             symbol,
             period="15y",
             progress=False,
-            auto_adjust=True
+            auto_adjust=False
         )
 
-        if len(df) < 300:
+        if len(df) < 60:
             return []
 
         df = resample_monthly(df)
+
+        if len(df) < 10:
+            return []
 
         df["Color"] = df.apply(
             candle_color,
@@ -160,16 +157,23 @@ def scan_pattern_only(symbol):
 
                     "Symbol": symbol,
 
-                    "PatternDate":
-                        block.index[-1],
+                    "PatternDate": block.index[-1],
 
-                    "PatternHigh":
-                        round(
-                            float(
-                                block["High"].max()
-                            ),
-                            2
-                        )
+                    "PatternHigh": round(
+                        float(
+                            block["High"].max()
+                        ),
+                        2
+                    ),
+
+                    "PatternLow": round(
+                        float(
+                            block["Low"].min()
+                        ),
+                        2
+                    ),
+
+                    "Pattern": "".join(colors)
                 })
 
         return results
