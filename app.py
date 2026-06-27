@@ -86,7 +86,6 @@ scan = st.sidebar.button(
 
 if scan:
 
-```
 st.info("Loading NSE symbols...")
 
 symbols = get_symbols("NSE")
