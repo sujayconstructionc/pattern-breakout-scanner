@@ -35,7 +35,8 @@ timeframe = st.sidebar.selectbox(
     [
         "Monthly",
         "Quarterly",
-        "6 Month"
+        "6 Month",
+        "1 Year"
     ]
 )
 
