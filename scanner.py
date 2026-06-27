@@ -18,52 +18,21 @@ def candle_color(row):
     elif row["Close"] < row["Open"]:
         return "R"
 
-    return "D"
+    else:
+        return "D"
 
 
-def resample_data(df, timeframe):
+def resample_monthly(df):
 
-    if timeframe == "Monthly":
+    monthly = df.resample("ME").agg({
+        "Open": "first",
+        "High": "max",
+        "Low": "min",
+        "Close": "last",
+        "Volume": "sum"
+    })
 
-        df = df.resample("ME").agg({
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum"
-        })
-
-    elif timeframe == "Quarterly":
-
-        df = df.resample("QE").agg({
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum"
-        })
-
-    elif timeframe == "6 Month":
-
-        df = df.resample("2QE").agg({
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum"
-        })
-
-    elif timeframe == "1 Year":
-
-        df = df.resample("YE").agg({
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum"
-        })
-
-    return df.dropna()
+    return monthly.dropna()
 
 
 def pattern_match(colors):
@@ -71,29 +40,10 @@ def pattern_match(colors):
     bull = ["G", "R", "G", "R", "G"]
     bear = ["R", "G", "R", "G", "R"]
 
-    if colors == bull:
-        return "GRGRG"
-
-    if colors == bear:
-        return "RGRGR"
-
-    return None
+    return colors == bull or colors == bear
 
 
-def scan_pattern_only(symbol, timeframe):
-
-    return [{
-        "Symbol": symbol,
-        "Timeframe": timeframe,
-        "Pattern": "TEST_OK"
-    }]
-
-def scan_symbol(
-    symbol,
-    timeframe,
-    breakout_mode="Close",
-    latest_only=False
-):
+def scan_symbol(symbol, breakout_mode="Close"):
 
     try:
 
@@ -104,12 +54,12 @@ def scan_symbol(
             auto_adjust=False
         )
 
-        if len(df) < 50:
+        if df is None or len(df) < 50:
             return []
 
         df = clean_yf_data(df)
 
-        df = resample_data(df, timeframe)
+        df = resample_monthly(df)
 
         if len(df) < 10:
             return []
@@ -125,69 +75,125 @@ def scan_symbol(
 
             block = df.iloc[i-5:i]
 
-            pattern = pattern_match(
-                block["Color"].tolist()
-            )
+            colors = block["Color"].tolist()
 
-            if not pattern:
+            if not pattern_match(colors):
                 continue
 
             pattern_high = block["High"].max()
 
             future = df.iloc[i:]
 
+            breakout_date = None
+            breakout_price = None
+
             for idx, row in future.iterrows():
 
                 if breakout_mode == "High":
-
-                    cond = (
-                        row["High"]
-                        > pattern_high
-                    )
-
+                    cond = row["High"] > pattern_high
                 else:
-
-                    cond = (
-                        row["Close"]
-                        > pattern_high
-                    )
+                    cond = row["Close"] > pattern_high
 
                 if cond:
-
-                    results.append({
-
-                        "Symbol": symbol,
-                        "Timeframe": timeframe,
-                        "Pattern": pattern,
-                        "PatternDate": block.index[-1],
-                        "BreakoutDate": idx,
-                        "PatternHigh": round(float(pattern_high), 2),
-                        "BreakoutPrice": round(float(row["Close"]), 2)
-
-                    })
-
+                    breakout_date = idx
+                    breakout_price = row["Close"]
                     break
 
-        if latest_only and len(results):
+            if breakout_date:
 
-            return [results[-1]]
+                results.append({
+
+                    "Symbol": symbol,
+
+                    "PatternDate":
+                        block.index[-1],
+
+                    "BreakoutDate":
+                        breakout_date,
+
+                    "PatternHigh":
+                        round(float(pattern_high), 2),
+
+                    "Close":
+                        round(float(breakout_price), 2)
+                })
 
         return results
 
-    except Exception:
+    except Exception as e:
+
+        print(symbol, e)
 
         return []
-def scan_symbol(
-    symbol,
-    timeframe,
-    breakout_mode="Close",
-    latest_only=False
-):
-    return []
 
 
-def scan_pattern_only(
-    symbol,
-    timeframe
-):
-    return []
+def scan_pattern_only(symbol):
+
+    try:
+
+        df = yf.download(
+            symbol,
+            period="15y",
+            progress=False,
+            auto_adjust=False
+        )
+
+        if df is None or len(df) < 50:
+            return []
+
+        df = clean_yf_data(df)
+
+        df = resample_monthly(df)
+
+        if len(df) < 10:
+            return []
+
+        df["Color"] = df.apply(
+            candle_color,
+            axis=1
+        )
+
+        results = []
+
+        for i in range(5, len(df) + 1):
+
+            block = df.iloc[i-5:i]
+
+            colors = block["Color"].tolist()
+
+            if pattern_match(colors):
+
+                results.append({
+
+                    "Symbol": symbol,
+
+                    "PatternDate":
+                        block.index[-1],
+
+                    "PatternHigh":
+                        round(
+                            float(
+                                block["High"].max()
+                            ),
+                            2
+                        ),
+
+                    "PatternLow":
+                        round(
+                            float(
+                                block["Low"].min()
+                            ),
+                            2
+                        ),
+
+                    "Pattern":
+                        "".join(colors)
+                })
+
+        return results
+
+    except Exception as e:
+
+        print(symbol, e)
+
+        return []
