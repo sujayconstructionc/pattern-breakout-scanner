@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+
 @st.cache_data(ttl=86400)
 def get_nse_symbols():
 
@@ -26,19 +27,46 @@ def get_nse_symbols():
         return []
 
 
+@st.cache_data(ttl=86400)
 def get_bse_symbols():
-    return []
+
+    try:
+
+        # Yahoo-compatible major BSE stocks
+        df = pd.read_csv(
+            "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
+        )
+
+        symbols = []
+
+        for s in df["Symbol"].tolist():
+
+            symbols.append(f"{s}.BO")
+
+        return list(set(symbols))
+
+    except Exception as e:
+
+        print(e)
+        return []
 
 
 def get_symbols(exchange):
 
     if exchange == "NSE":
+
         return get_nse_symbols()
 
     elif exchange == "BSE":
+
         return get_bse_symbols()
 
     elif exchange == "NSE+BSE":
-        return get_nse_symbols() + get_bse_symbols()
+
+        return (
+            get_nse_symbols()
+            +
+            get_bse_symbols()
+        )
 
     return []
