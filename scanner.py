@@ -91,12 +91,15 @@ def scan_pattern_only(symbol, timeframe):
             auto_adjust=False
         )
 
-        if len(df) < 50:
+        if df is None or len(df) < 50:
             return []
 
         df = clean_yf_data(df)
 
-        df = resample_data(df, timeframe)
+        df = resample_data(
+            df,
+            timeframe
+        )
 
         if len(df) < 10:
             return []
@@ -110,10 +113,12 @@ def scan_pattern_only(symbol, timeframe):
 
         for i in range(5, len(df) + 1):
 
-            block = df.iloc[i-5:i]
+            block = df.iloc[i - 5:i]
+
+            colors = block["Color"].tolist()
 
             pattern = pattern_match(
-                block["Color"].tolist()
+                colors
             )
 
             if pattern:
@@ -121,19 +126,104 @@ def scan_pattern_only(symbol, timeframe):
                 results.append({
 
                     "Symbol": symbol,
-                    "Timeframe": timeframe,
-                    "Pattern": pattern,
-                    "PatternDate": block.index[-1],
-                    "PatternHigh": round(float(block["High"].max()), 2),
-                    "PatternLow": round(float(block["Low"].min()), 2)
 
+                    "Timeframe": timeframe,
+
+                    "Pattern": pattern,
+
+                    "Colors":
+                        "".join(colors),
+
+                    "PatternDate":
+                        block.index[-1],
+
+                    "PatternHigh":
+                        round(
+                            float(
+                                block["High"].max()
+                            ),
+                            2
+                        ),
+
+                    "PatternLow":
+                        round(
+                            float(
+                                block["Low"].min()
+                            ),
+                            2
+                        )
                 })
+
+        # DEBUG
+        if len(results) == 0:
+
+            last10 = "".join(
+                df["Color"]
+                .tail(10)
+                .tolist()
+            )
+
+            results.append({
+
+                "Symbol": symbol,
+
+                "Timeframe": timeframe,
+
+                "Pattern":
+                    "NOT_FOUND",
+
+                "Colors":
+                    last10,
+
+                "PatternDate":
+                    df.index[-1],
+
+                "PatternHigh":
+                    round(
+                        float(
+                            df["High"]
+                            .tail(5)
+                            .max()
+                        ),
+                        2
+                    ),
+
+                "PatternLow":
+                    round(
+                        float(
+                            df["Low"]
+                            .tail(5)
+                            .min()
+                        ),
+                        2
+                    )
+            })
 
         return results
 
-    except Exception:
+    except Exception as e:
 
-        return []
+        return [{
+
+            "Symbol": symbol,
+
+            "Timeframe": timeframe,
+
+            "Pattern":
+                "ERROR",
+
+            "Colors":
+                str(e),
+
+            "PatternDate":
+                "",
+
+            "PatternHigh":
+                0,
+
+            "PatternLow":
+                0
+        }]
 
 
 def scan_symbol(
