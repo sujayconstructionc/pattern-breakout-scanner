@@ -5,16 +5,24 @@ import streamlit as st
 @st.cache_data(ttl=86400)
 def get_symbols(exchange):
 
-    url = "https://archives.nseindia.com/content/equities/EQUITY_L.csv"
+    try:
 
-    df = pd.read_csv(url)
+        url = "https://archives.nseindia.com/content/equities/EQUITY_L.csv"
 
-    symbols = (
-        df["SYMBOL"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
+        df = pd.read_csv(url)
 
-    return [f"{s}.NS" for s in symbols]
+        symbols = (
+            df["SYMBOL"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        return [f"{s}.NS" for s in symbols]
+
+    except Exception as e:
+
+        st.error(f"Symbol Load Error: {e}")
+
+        return []
