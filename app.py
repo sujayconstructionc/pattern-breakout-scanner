@@ -2,163 +2,155 @@ import streamlit as st
 import pandas as pd
 
 from data_loader import get_symbols
-from scanner import (
-scan_symbol,
-scan_pattern_only
-)
+from scanner import scan_symbol, scan_pattern_only
 
 st.set_page_config(
-page_title="Pattern Breakout Scanner V3",
-layout="wide"
+    page_title="Pattern Breakout Scanner V3",
+    layout="wide"
 )
 
 st.title("📈 Pattern Breakout Scanner V3")
 
-# ==================================
-
+# ======================
 # SIDEBAR
-
-# ==================================
+# ======================
 
 st.sidebar.header("Scanner Filters")
 
 exchange = st.sidebar.selectbox(
-"Exchange",
-[
-"NSE"
-]
+    "Exchange",
+    ["NSE"]
 )
 
 timeframe = st.sidebar.selectbox(
-"Timeframe",
-[
-"Monthly",
-"Quarterly",
-"6 Month",
-"1 Year"
-]
+    "Timeframe",
+    [
+        "Monthly",
+        "Quarterly",
+        "6 Month",
+        "1 Year"
+    ]
 )
 
 scan_mode = st.sidebar.radio(
-"Scan Mode",
-[
-"Pattern Only",
-"Pattern + Breakout"
-]
+    "Scan Mode",
+    [
+        "Pattern Only",
+        "Pattern + Breakout"
+    ]
 )
 
 breakout_mode = st.sidebar.radio(
-"Breakout Type",
-[
-"Close",
-"High"
-]
+    "Breakout Type",
+    [
+        "Close",
+        "High"
+    ]
 )
 
 market_cap_min = st.sidebar.number_input(
-"Min Market Cap (Cr)",
-min_value=0,
-value=300
+    "Min Market Cap (Cr)",
+    min_value=0,
+    value=300
 )
 
 market_cap_max = st.sidebar.number_input(
-"Max Market Cap (Cr)",
-min_value=0,
-value=20000
+    "Max Market Cap (Cr)",
+    min_value=0,
+    value=20000
 )
 
 max_stocks = st.sidebar.number_input(
-"Max Stocks To Scan",
-min_value=1,
-max_value=3000,
-value=500
+    "Max Stocks To Scan",
+    min_value=1,
+    max_value=5000,
+    value=500
 )
 
-scan = st.sidebar.button(
-"SCAN NOW"
-)
+scan = st.sidebar.button("SCAN NOW")
 
-# ==================================
-
+# ======================
 # SCAN
-
-# ==================================
+# ======================
 
 if scan:
 
-st.info("Loading NSE symbols...")
+    st.info("Loading NSE symbols...")
 
-symbols = get_symbols("NSE")
+    symbols = get_symbols("NSE")
 
-symbols = symbols[:max_stocks]
+    if not symbols:
+        st.error("No symbols loaded.")
+        st.stop()
 
-st.success(
-    f"Symbols Loaded = {len(symbols)}"
-)
+    symbols = symbols[:max_stocks]
 
-results = []
-
-progress = st.progress(0)
-
-total = len(symbols)
-
-for i, symbol in enumerate(symbols):
-
-    try:
-
-        if scan_mode == "Pattern Only":
-
-            rows = scan_pattern_only(
-                symbol=symbol,
-                timeframe=timeframe
-            )
-
-        else:
-
-            rows = scan_symbol(
-                symbol=symbol,
-                timeframe=timeframe,
-                breakout_mode=breakout_mode
-            )
-
-        if rows:
-
-            results.extend(rows)
-
-    except Exception:
-        pass
-
-    progress.progress(
-        (i + 1) / total
+    st.success(
+        f"Symbols Loaded = {len(symbols)}"
     )
 
-st.success(
-    f"Scan Completed | Results = {len(results)}"
-)
+    results = []
 
-if len(results):
+    progress = st.progress(0)
 
-    df = pd.DataFrame(results)
+    total = len(symbols)
 
-    st.dataframe(
-        df,
-        use_container_width=True
+    for i, symbol in enumerate(symbols):
+
+        try:
+
+            if scan_mode == "Pattern Only":
+
+                rows = scan_pattern_only(
+                    symbol=symbol,
+                    timeframe=timeframe
+                )
+
+            else:
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode
+                )
+
+            if rows:
+                results.extend(rows)
+
+        except Exception as e:
+
+            print(symbol, e)
+
+        progress.progress(
+            (i + 1) / total
+        )
+
+    st.success(
+        f"Scan Completed | Results Found = {len(results)}"
     )
 
-    csv = df.to_csv(
-        index=False
-    )
+    if len(results) > 0:
 
-    st.download_button(
-        "⬇ Download CSV",
-        csv,
-        file_name="scanner_results.csv",
-        mime="text/csv"
-    )
+        df = pd.DataFrame(results)
 
-else:
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
 
-    st.warning(
-        "No pattern found"
-    )
-```
+        csv = df.to_csv(
+            index=False
+        )
+
+        st.download_button(
+            label="⬇ Download CSV",
+            data=csv,
+            file_name="scanner_results.csv",
+            mime="text/csv"
+        )
+
+    else:
+
+        st.warning(
+            "No pattern found"
+        )
