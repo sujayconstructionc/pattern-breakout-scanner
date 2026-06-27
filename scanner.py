@@ -225,3 +225,17 @@ def scan_symbol(
     except Exception:
 
         return []
+def scan_symbol(
+    symbol,
+    timeframe,
+    breakout_mode="Close",
+    latest_only=False
+):
+    return []
+
+
+def scan_pattern_only(
+    symbol,
+    timeframe
+):
+    return []
