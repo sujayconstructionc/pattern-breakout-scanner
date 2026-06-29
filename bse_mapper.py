@@ -12,15 +12,11 @@ try:
         "data/v1/scrips/equity_security_master.csv"
     )
 
-    df = pd.read_csv(url)
-
-    return df
+    return pd.read_csv(url)
 
 except Exception as e:
 
-    st.error(
-        f"Equity Master Error: {e}"
-    )
+    st.error(f"Equity Master Error: {e}")
 
     return pd.DataFrame()
 ```
@@ -47,45 +43,22 @@ for _, row in bse.iterrows():
 
     try:
 
-        code = str(
-            int(
-                row["security_id"]
-            )
-        )
+        code = str(int(row["security_id"]))
 
         if len(code) != 6:
             continue
 
-        yahoo_symbol = (
-            f"{code}.BO"
-        )
+        yahoo_symbol = f"{code}.BO"
 
-        trading_symbol = str(
-            row.get(
-                "symbol",
-                ""
-            )
-        )
+        symbol_map[yahoo_symbol] = {
 
-        company_name = str(
-            row.get(
-                "name",
-                ""
-            )
-        )
-
-        symbol_map[
-            yahoo_symbol
-        ] = {
-
-            "Code":
-                code,
+            "Code": code,
 
             "TradingSymbol":
-                trading_symbol,
+                str(row.get("symbol", "")),
 
             "Name":
-                company_name
+                str(row.get("name", ""))
         }
 
     except:
@@ -98,11 +71,7 @@ return symbol_map
 def get_bse_yahoo_symbols():
 
 ```
-symbol_map = (
-    get_bse_symbol_map()
-)
-
 return list(
-    symbol_map.keys()
+    get_bse_symbol_map().keys()
 )
 ```
