@@ -7,15 +7,6 @@ def get_bse_master():
 
     try:
 
-        # BSE Scrip Master
-        # Columns:
-        # Scrip Code
-        # Instrument Code
-        # ISIN
-        #
-        # BSE security master format documented by BSE
-        # and includes Scrip Code and ISIN. :contentReference[oaicite:0]{index=0}
-
         url = (
             "https://developer.paytmmoney.com/"
             "data/v1/scrips/bse_security_master.csv"
@@ -25,7 +16,7 @@ def get_bse_master():
 
         return df
 
-    except:
+    except Exception:
 
         return pd.DataFrame()
 
@@ -37,21 +28,55 @@ def get_bse_yahoo_symbols():
     if len(df) == 0:
         return []
 
-    possible_cols = [
-        "SEM_SMST_SECURITY_ID",
-        "SecurityId",
-        "Scrip Code",
-        "security_id"
-    ]
+    # Debug
+    print(df.columns.tolist())
 
     code_col = None
 
-    for c in possible_cols:
+    preferred_cols = [
+        "Scrip Code",
+        "SCRIP_CODE",
+        "SC_CODE",
+        "BSECODE",
+        "BSE_CODE"
+    ]
+
+    for c in preferred_cols:
 
         if c in df.columns:
 
             code_col = c
             break
+
+    # Fallback
+    if code_col is None:
+
+        numeric_cols = []
+
+        for c in df.columns:
+
+            try:
+
+                sample = (
+                    df[c]
+                    .dropna()
+                    .astype(str)
+                    .head(20)
+                )
+
+                if all(
+                    len(x) == 6
+                    and x.isdigit()
+                    for x in sample
+                ):
+                    numeric_cols.append(c)
+
+            except:
+                pass
+
+        if len(numeric_cols):
+
+            code_col = numeric_cols[0]
 
     if code_col is None:
         return []
@@ -60,8 +85,19 @@ def get_bse_yahoo_symbols():
 
     for code in df[code_col].dropna():
 
-        symbols.append(
-            f"{int(code)}.BO"
-        )
+        try:
+
+            code = str(int(float(code)))
+
+            if len(code) == 6:
+
+                symbols.append(
+                    f"{code}.BO"
+                )
+
+        except:
+            pass
+
+    symbols = list(dict.fromkeys(symbols))
 
     return symbols
