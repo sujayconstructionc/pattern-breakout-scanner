@@ -18,7 +18,7 @@ def get_bse_master():
 
     except Exception as e:
 
-        print(e)
+        print("BSE MASTER ERROR:", e)
 
         return pd.DataFrame()
 
@@ -30,18 +30,29 @@ def get_bse_yahoo_symbols():
     if len(df) == 0:
         return []
 
-    print(df.columns.tolist())
+    # ==========================
+    # DEBUG OUTPUT
+    # ==========================
 
-    # TEMP TEST
+    st.write("BSE Columns")
+    st.write(df.columns.tolist())
+
+    st.write("BSE Sample Data")
+    st.dataframe(df.head(20))
+
+    print(df.columns.tolist())
+    print(df.head(20))
+
+    # TEMP SYMBOLS
     return [
-        "500325.BO",
-        "500209.BO",
-        "532540.BO",
-        "500180.BO",
-        "532174.BO",
-        "500112.BO",
-        "532215.BO",
-        "500696.BO",
-        "500875.BO",
-        "532978.BO"
+        "500325.BO",  # Reliance
+        "500209.BO",  # Infosys
+        "532540.BO",  # TCS
+        "500180.BO",  # HDFC Bank
+        "532174.BO",  # ICICI Bank
+        "500112.BO",  # SBI
+        "532215.BO",  # Axis Bank
+        "500696.BO",  # HUL
+        "500875.BO",  # ITC
+        "532978.BO"   # Bajaj Finserv
     ]
