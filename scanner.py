@@ -2,6 +2,10 @@ import pandas as pd
 import yfinance as yf
 
 
+# =====================================
+# CLEAN YFINANCE DATA
+# =====================================
+
 def clean_yf_data(df):
 
     if isinstance(df.columns, pd.MultiIndex):
@@ -9,6 +13,10 @@ def clean_yf_data(df):
 
     return df
 
+
+# =====================================
+# CANDLE COLOR
+# =====================================
 
 def candle_color(row):
 
@@ -21,6 +29,10 @@ def candle_color(row):
     else:
         return "D"
 
+
+# =====================================
+# RESAMPLE
+# =====================================
 
 def resample_data(df, timeframe="Monthly"):
 
@@ -46,54 +58,55 @@ def resample_data(df, timeframe="Monthly"):
 
     elif timeframe == "6 Month":
 
-    monthly = df.resample("ME").agg({
-        "Open": "first",
-        "High": "max",
-        "Low": "min",
-        "Close": "last",
-        "Volume": "sum"
-    })
+        monthly = df.resample("ME").agg({
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last",
+            "Volume": "sum"
+        })
 
-    monthly["Year"] = monthly.index.year
-    monthly["Half"] = monthly.index.month.map(
-        lambda x: 1 if x <= 6 else 2
-    )
+        monthly["Year"] = monthly.index.year
 
-    df = monthly.groupby(
-        ["Year", "Half"]
-    ).agg({
-        "Open": "first",
-        "High": "max",
-        "Low": "min",
-        "Close": "last",
-        "Volume": "sum"
-    })
+        monthly["Half"] = monthly.index.month.map(
+            lambda x: 1 if x <= 6 else 2
+        )
 
-    dates = []
+        df = monthly.groupby(
+            ["Year", "Half"]
+        ).agg({
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last",
+            "Volume": "sum"
+        })
 
-    for yr, half in df.index:
+        dates = []
 
-        if half == 1:
+        for yr, half in df.index:
 
-            dates.append(
-                pd.Timestamp(
-                    year=yr,
-                    month=6,
-                    day=30
+            if half == 1:
+
+                dates.append(
+                    pd.Timestamp(
+                        year=yr,
+                        month=6,
+                        day=30
+                    )
                 )
-            )
 
-        else:
+            else:
 
-            dates.append(
-                pd.Timestamp(
-                    year=yr,
-                    month=12,
-                    day=31
+                dates.append(
+                    pd.Timestamp(
+                        year=yr,
+                        month=12,
+                        day=31
+                    )
                 )
-            )
 
-    df.index = dates
+        df.index = dates
 
     elif timeframe == "1 Year":
 
@@ -108,6 +121,10 @@ def resample_data(df, timeframe="Monthly"):
     return df.dropna()
 
 
+# =====================================
+# PATTERN MATCH
+# =====================================
+
 def pattern_match(colors):
 
     bull = ["G", "R", "G", "R", "G"]
@@ -115,6 +132,10 @@ def pattern_match(colors):
 
     return colors == bull or colors == bear
 
+
+# =====================================
+# PATTERN ONLY
+# =====================================
 
 def scan_pattern_only(
     symbol,
@@ -148,6 +169,45 @@ def scan_pattern_only(
             axis=1
         )
 
+        results = []
+
+        for i in range(5, len(df) + 1):
+
+            block = df.iloc[i - 5:i]
+
+            colors = block["Color"].tolist()
+
+            if pattern_match(colors):
+
+                results.append({
+
+                    "Symbol": symbol,
+
+                    "Timeframe": timeframe,
+
+                    "PatternDate":
+                        block.index[-1],
+
+                    "PatternHigh":
+                        round(
+                            float(
+                                block["High"].max()
+                            ),
+                            2
+                        ),
+
+                    "PatternLow":
+                        round(
+                            float(
+                                block["Low"].min()
+                            ),
+                            2
+                        ),
+
+                    "Pattern":
+                        "".join(colors)
+                })
+
         return results
 
     except Exception as e:
@@ -156,6 +216,10 @@ def scan_pattern_only(
 
         return []
 
+
+# =====================================
+# BREAKOUT SCAN
+# =====================================
 
 def scan_symbol(
     symbol,
@@ -237,7 +301,6 @@ def scan_symbol(
 
             if breakout_date:
 
-                # Latest Breakout mode
                 if latest_only:
 
                     if breakout_date != latest_bar:
@@ -257,17 +320,13 @@ def scan_symbol(
 
                     "PatternHigh":
                         round(
-                            float(
-                                pattern_high
-                            ),
+                            float(pattern_high),
                             2
                         ),
 
                     "BreakoutPrice":
                         round(
-                            float(
-                                breakout_price
-                            ),
+                            float(breakout_price),
                             2
                         )
                 })
