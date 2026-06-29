@@ -62,7 +62,29 @@ scan = st.sidebar.button("SCAN NOW")
 # =========================
 # SCAN
 # =========================
+if st.checkbox("Debug CUPID"):
 
+    import yfinance as yf
+
+    df = yf.download(
+        "CUPID.BO",
+        period="15y",
+        progress=False,
+        auto_adjust=False
+    )
+
+    st.write(df.tail(20))
+
+    sixm = df.resample("2QE").agg({
+        "Open":"first",
+        "High":"max",
+        "Low":"min",
+        "Close":"last",
+        "Volume":"sum"
+    })
+
+    st.write("6 Month Data")
+    st.dataframe(sixm.tail(20))
 if scan:
 
     st.info(f"Loading {exchange} symbols...")
