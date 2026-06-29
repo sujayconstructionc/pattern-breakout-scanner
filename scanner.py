@@ -191,6 +191,8 @@ def scan_symbol(
 
         results = []
 
+        latest_bar = df.index[-1]
+
         for i in range(5, len(df)):
 
             block = df.iloc[i - 5:i]
@@ -233,6 +235,12 @@ def scan_symbol(
 
             if breakout_date:
 
+                # Latest Breakout mode
+                if latest_only:
+
+                    if breakout_date != latest_bar:
+                        continue
+
                 results.append({
 
                     "Symbol": symbol,
@@ -261,10 +269,6 @@ def scan_symbol(
                             2
                         )
                 })
-
-        if latest_only and len(results):
-
-            return [results[-1]]
 
         return results
 
