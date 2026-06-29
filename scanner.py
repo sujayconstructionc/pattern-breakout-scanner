@@ -231,36 +231,43 @@ def scan_symbol(
 
                     break
 
-            if breakout_date:
+           if breakout_date:
 
-                results.append({
+    latest_bar = df.index[-1]
 
-                    "Symbol": symbol,
+    if latest_only:
 
-                    "Timeframe": timeframe,
+        if breakout_date != latest_bar:
+            continue
 
-                    "PatternDate":
-                        block.index[-1],
+    results.append({
 
-                    "BreakoutDate":
-                        breakout_date,
+        "Symbol": symbol,
 
-                    "PatternHigh":
-                        round(
-                            float(
-                                pattern_high
-                            ),
-                            2
-                        ),
+        "Timeframe": timeframe,
 
-                    "BreakoutPrice":
-                        round(
-                            float(
-                                breakout_price
-                            ),
-                            2
-                        )
-                })
+        "PatternDate":
+            block.index[-1],
+
+        "BreakoutDate":
+            breakout_date,
+
+        "PatternHigh":
+            round(
+                float(
+                    pattern_high
+                ),
+                2
+            ),
+
+        "BreakoutPrice":
+            round(
+                float(
+                    breakout_price
+                ),
+                2
+            )
+    })
 
         if latest_only and len(results):
 
