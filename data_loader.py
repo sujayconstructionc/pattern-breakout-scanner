@@ -1,9 +1,6 @@
 import pandas as pd
 import streamlit as st
-
-from bse_mapper import (
-    get_bse_yahoo_symbols
-)
+from bse_mapper import get_bse_yahoo_symbols
 
 
 @st.cache_data(ttl=86400)
@@ -26,12 +23,11 @@ def get_nse_symbols():
             .tolist()
         )
 
-        return [
-            f"{s}.NS"
-            for s in symbols
-        ]
+        return [f"{s}.NS" for s in symbols]
 
-    except:
+    except Exception as e:
+
+        st.error(f"NSE Error: {e}")
 
         return []
 
@@ -57,12 +53,6 @@ def get_symbols(exchange):
 
         bse = get_bse_symbols()
 
-        merged = list(
-            dict.fromkeys(
-                nse + bse
-            )
-        )
-
-        return merged
+        return list(dict.fromkeys(nse + bse))
 
     return []
