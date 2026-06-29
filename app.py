@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 
 from data_loader import get_symbols
-
 from scanner import (
 scan_symbol,
 scan_pattern_only
@@ -140,7 +139,6 @@ for i, symbol in enumerate(symbols):
             )
 
         if rows:
-
             results.extend(rows)
 
     except Exception as e:
@@ -169,13 +167,7 @@ if len(errors):
 
 if len(results):
 
-    df = pd.DataFrame(
-        results
-    )
-
-    # ==========================
-    # BSE Name Mapping
-    # ==========================
+    df = pd.DataFrame(results)
 
     try:
 
@@ -203,7 +195,7 @@ if len(results):
             )
         )
 
-    except:
+    except Exception:
         pass
 
     if "PatternDate" in df.columns:
@@ -222,10 +214,9 @@ if len(results):
     ]:
 
         if col in df.columns:
-
             front_cols.append(col)
 
-    remaining_cols = [
+    other_cols = [
 
         c for c in df.columns
 
@@ -234,7 +225,7 @@ if len(results):
 
     df = df[
         front_cols +
-        remaining_cols
+        other_cols
     ]
 
     st.dataframe(
