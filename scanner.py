@@ -124,7 +124,9 @@ if symbol.upper() in ["CUPID.BO", "CUPID.NS"]:
         "Low",
         "Close",
         "Color"
-    ]].tail(30))
+    ]].tail(30)
+         )
+    
         results = []
 
         for i in range(5, len(df) + 1):
