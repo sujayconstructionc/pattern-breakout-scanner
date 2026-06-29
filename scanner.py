@@ -46,13 +46,56 @@ def resample_data(df, timeframe="Monthly"):
 
     elif timeframe == "6 Month":
 
-        df = df.resample("2QE").agg({
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum"
-        })
+        elif timeframe == "6 Month":
+
+    monthly = df.resample("ME").agg({
+        "Open": "first",
+        "High": "max",
+        "Low": "min",
+        "Close": "last",
+        "Volume": "sum"
+    })
+
+    monthly["Year"] = monthly.index.year
+    monthly["Half"] = monthly.index.month.map(
+        lambda x: 1 if x <= 6 else 2
+    )
+
+    df = monthly.groupby(
+        ["Year", "Half"]
+    ).agg({
+        "Open": "first",
+        "High": "max",
+        "Low": "min",
+        "Close": "last",
+        "Volume": "sum"
+    })
+
+    dates = []
+
+    for yr, half in df.index:
+
+        if half == 1:
+
+            dates.append(
+                pd.Timestamp(
+                    year=yr,
+                    month=6,
+                    day=30
+                )
+            )
+
+        else:
+
+            dates.append(
+                pd.Timestamp(
+                    year=yr,
+                    month=12,
+                    day=31
+                )
+            )
+
+    df.index = dates
 
     elif timeframe == "1 Year":
 
