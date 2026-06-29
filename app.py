@@ -22,7 +22,11 @@ st.sidebar.header("Scanner Filters")
 
 exchange = st.sidebar.selectbox(
     "Exchange",
-    ["NSE"]
+    [
+        "NSE",
+        "BSE",
+        "NSE+BSE"
+    ]
 )
 
 timeframe = st.sidebar.selectbox(
