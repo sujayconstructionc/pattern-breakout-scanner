@@ -34,8 +34,6 @@ df = get_equity_master()
 if len(df) == 0:
     return {}
 
-# Only BSE Stocks
-
 bse = df[
     df["exchange"]
     .astype(str)
