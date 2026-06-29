@@ -46,8 +46,6 @@ def resample_data(df, timeframe="Monthly"):
 
     elif timeframe == "6 Month":
 
-        elif timeframe == "6 Month":
-
     monthly = df.resample("ME").agg({
         "Open": "first",
         "High": "max",
