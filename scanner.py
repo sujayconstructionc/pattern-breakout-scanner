@@ -106,65 +106,6 @@ def scan_pattern_only(
             candle_color,
             axis=1
         )
-# ==========================
-# DEBUG FOR CUPID
-# ==========================
-
-if symbol.upper() in ["CUPID.BO", "CUPID.NS"]:
-
-    print("\n")
-    print("====================================")
-    print("DEBUG :", symbol)
-    print("TIMEFRAME :", timeframe)
-    print("====================================")
-
-    print(df[[
-        "Open",
-        "High",
-        "Low",
-        "Close",
-        "Color"
-    ]].tail(30)
-         )
-    
-        results = []
-
-        for i in range(5, len(df) + 1):
-
-            block = df.iloc[i - 5:i]
-
-            colors = block["Color"].tolist()
-
-            if pattern_match(colors):
-
-                results.append({
-
-                    "Symbol": symbol,
-
-                    "Timeframe": timeframe,
-
-                    "PatternDate":
-                        block.index[-1],
-
-                    "PatternHigh":
-                        round(
-                            float(
-                                block["High"].max()
-                            ),
-                            2
-                        ),
-
-                    "PatternLow":
-                        round(
-                            float(
-                                block["Low"].min()
-                            ),
-                            2
-                        ),
-
-                    "Pattern":
-                        "".join(colors)
-                })
 
         return results
 
