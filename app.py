@@ -2,250 +2,214 @@ import streamlit as st
 import pandas as pd
 
 from data_loader import get_symbols
-from scanner import (
-scan_symbol,
-scan_pattern_only
-)
-
-from bse_mapper import (
-get_bse_symbol_map
-)
+from scanner import scan_symbol, scan_pattern_only
+from bse_mapper import get_bse_symbol_map
 
 st.set_page_config(
-page_title="Pattern Breakout Scanner V4",
-layout="wide"
+    page_title="Pattern Breakout Scanner V4",
+    layout="wide"
 )
 
 st.title("📈 Pattern Breakout Scanner V4")
 
-# =====================================
-
+# =========================
 # SIDEBAR
-
-# =====================================
+# =========================
 
 st.sidebar.header("Scanner Filters")
 
 exchange = st.sidebar.selectbox(
-"Exchange",
-[
-"NSE",
-"BSE",
-"NSE+BSE"
-]
+    "Exchange",
+    ["NSE", "BSE", "NSE+BSE"]
 )
 
 timeframe = st.sidebar.selectbox(
-"Timeframe",
-[
-"Monthly",
-"Quarterly",
-"6 Month",
-"1 Year"
-]
+    "Timeframe",
+    [
+        "Monthly",
+        "Quarterly",
+        "6 Month",
+        "1 Year"
+    ]
 )
 
 scan_mode = st.sidebar.radio(
-"Scan Mode",
-[
-"Pattern Only",
-"Historical Breakout",
-"Latest Breakout"
-]
+    "Scan Mode",
+    [
+        "Pattern Only",
+        "Historical Breakout",
+        "Latest Breakout"
+    ]
 )
 
 breakout_mode = st.sidebar.radio(
-"Breakout Type",
-[
-"Close",
-"High"
-]
+    "Breakout Type",
+    [
+        "Close",
+        "High"
+    ]
 )
 
 max_stocks = st.sidebar.number_input(
-"Max Stocks To Scan",
-min_value=1,
-max_value=10000,
-value=500
+    "Max Stocks To Scan",
+    min_value=1,
+    max_value=10000,
+    value=500
 )
 
-scan = st.sidebar.button(
-"SCAN NOW"
-)
+scan = st.sidebar.button("SCAN NOW")
 
-# =====================================
-
+# =========================
 # SCAN
-
-# =====================================
+# =========================
 
 if scan:
 
-st.info(
-    f"Loading {exchange} symbols..."
-)
+    st.info(f"Loading {exchange} symbols...")
 
-symbols = get_symbols(exchange)
+    symbols = get_symbols(exchange)
 
-if len(symbols) == 0:
+    if len(symbols) == 0:
+        st.error("No symbols loaded.")
+        st.stop()
 
-    st.error(
-        "No symbols loaded."
+    symbols = symbols[:max_stocks]
+
+    st.success(
+        f"Symbols Loaded = {len(symbols)}"
     )
 
-    st.stop()
+    progress = st.progress(0)
 
-symbols = symbols[:max_stocks]
+    results = []
+    errors = []
 
-st.success(
-    f"Symbols Loaded = {len(symbols)}"
-)
+    total = len(symbols)
 
-progress = st.progress(0)
+    for i, symbol in enumerate(symbols):
 
-results = []
-errors = []
+        try:
 
-total = len(symbols)
+            if scan_mode == "Pattern Only":
 
-for i, symbol in enumerate(symbols):
+                rows = scan_pattern_only(
+                    symbol=symbol,
+                    timeframe=timeframe
+                )
 
-    try:
+            elif scan_mode == "Historical Breakout":
 
-        if scan_mode == "Pattern Only":
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=False
+                )
 
-            rows = scan_pattern_only(
-                symbol=symbol,
-                timeframe=timeframe
+            else:
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=True
+                )
+
+            if rows:
+                results.extend(rows)
+
+        except Exception as e:
+
+            errors.append(
+                f"{symbol} -> {e}"
             )
 
-        elif scan_mode == "Historical Breakout":
+        progress.progress(
+            (i + 1) / total
+        )
 
-            rows = scan_symbol(
-                symbol=symbol,
-                timeframe=timeframe,
-                breakout_mode=breakout_mode,
-                latest_only=False
+    st.success(
+        f"Scan Completed | Results Found = {len(results)}"
+    )
+
+    if len(errors):
+
+        with st.expander("Show Errors"):
+            st.write(errors[:100])
+
+    if len(results):
+
+        df = pd.DataFrame(results)
+
+        try:
+
+            bse_map = get_bse_symbol_map()
+
+            df["TradingSymbol"] = df["Symbol"].apply(
+                lambda x: bse_map.get(
+                    x, {}
+                ).get(
+                    "TradingSymbol", ""
+                )
             )
 
-        else:
-
-            rows = scan_symbol(
-                symbol=symbol,
-                timeframe=timeframe,
-                breakout_mode=breakout_mode,
-                latest_only=True
+            df["Name"] = df["Symbol"].apply(
+                lambda x: bse_map.get(
+                    x, {}
+                ).get(
+                    "Name", ""
+                )
             )
 
-        if rows:
-            results.extend(rows)
+        except Exception:
+            pass
 
-    except Exception as e:
+        if "PatternDate" in df.columns:
 
-        errors.append(
-            f"{symbol} -> {e}"
-        )
-
-    progress.progress(
-        (i + 1) / total
-    )
-
-st.success(
-    f"Scan Completed | Results Found = {len(results)}"
-)
-
-if len(errors):
-
-    with st.expander(
-        "Show Errors"
-    ):
-
-        st.write(
-            errors[:100]
-        )
-
-if len(results):
-
-    df = pd.DataFrame(results)
-
-    try:
-
-        bse_map = get_bse_symbol_map()
-
-        df["TradingSymbol"] = df["Symbol"].apply(
-            lambda x:
-            bse_map.get(
-                x,
-                {}
-            ).get(
-                "TradingSymbol",
-                ""
+            df = df.sort_values(
+                by="PatternDate",
+                ascending=False
             )
+
+        front_cols = []
+
+        for col in [
+            "Symbol",
+            "TradingSymbol",
+            "Name"
+        ]:
+
+            if col in df.columns:
+                front_cols.append(col)
+
+        other_cols = [
+            c for c in df.columns
+            if c not in front_cols
+        ]
+
+        df = df[
+            front_cols +
+            other_cols
+        ]
+
+        st.dataframe(
+            df,
+            use_container_width=True
         )
 
-        df["Name"] = df["Symbol"].apply(
-            lambda x:
-            bse_map.get(
-                x,
-                {}
-            ).get(
-                "Name",
-                ""
-            )
+        csv = df.to_csv(
+            index=False
         )
 
-    except Exception:
-        pass
-
-    if "PatternDate" in df.columns:
-
-        df = df.sort_values(
-            by="PatternDate",
-            ascending=False
+        st.download_button(
+            "⬇ Download CSV",
+            csv,
+            file_name="scanner_results.csv",
+            mime="text/csv"
         )
 
-    front_cols = []
+    else:
 
-    for col in [
-        "Symbol",
-        "TradingSymbol",
-        "Name"
-    ]:
-
-        if col in df.columns:
-            front_cols.append(col)
-
-    other_cols = [
-
-        c for c in df.columns
-
-        if c not in front_cols
-    ]
-
-    df = df[
-        front_cols +
-        other_cols
-    ]
-
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
-
-    csv = df.to_csv(
-        index=False
-    )
-
-    st.download_button(
-        "⬇ Download CSV",
-        csv,
-        file_name="scanner_results.csv",
-        mime="text/csv"
-    )
-
-else:
-
-    st.warning(
-        "No Results Found"
-    )
-```
+        st.warning(
+            "No Results Found"
+        )
