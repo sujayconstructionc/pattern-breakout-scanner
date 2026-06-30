@@ -61,8 +61,6 @@ value=500
 
 st.sidebar.markdown("---")
 
-st.sidebar.subheader("Market Cap Filter")
-
 min_mcap = st.sidebar.number_input(
 "Min Market Cap (Cr)",
 value=300
@@ -73,8 +71,6 @@ max_mcap = st.sidebar.number_input(
 value=30000
 )
 
-st.sidebar.subheader("Price Filter")
-
 min_price = st.sidebar.number_input(
 "Min CMP",
 value=0.0
@@ -84,8 +80,6 @@ max_price = st.sidebar.number_input(
 "Max CMP",
 value=100000.0
 )
-
-st.sidebar.subheader("Volume Filter")
 
 min_volume = st.sidebar.number_input(
 "Min Volume",
@@ -162,7 +156,6 @@ for i, symbol in enumerate(symbols):
             )
 
         if rows:
-
             results.extend(rows)
 
     except Exception as e:
@@ -193,42 +186,15 @@ if len(results):
 
     df = pd.DataFrame(results)
 
-    # =====================================
-    # FILTERS
-    # =====================================
-
-    if "MarketCapCr" in df.columns:
-
-        df = df[
-            (df["MarketCapCr"] >= min_mcap)
-            &
-            (df["MarketCapCr"] <= max_mcap)
-        ]
-
-    if "CMP" in df.columns:
-
-        df = df[
-            (df["CMP"] >= min_price)
-            &
-            (df["CMP"] <= max_price)
-        ]
-
-    if "Volume" in df.columns:
-
-        df = df[
-            df["Volume"] >= min_volume
-        ]
-
-    # =====================================
-    # BSE MAPPING
-    # =====================================
+    # ==========================
+    # BSE MAP
+    # ==========================
 
     try:
 
         bse_map = get_bse_symbol_map()
 
         df["TradingSymbol"] = df["Symbol"].apply(
-
             lambda x:
             bse_map.get(
                 x,
@@ -240,7 +206,6 @@ if len(results):
         )
 
         df["Name"] = df["Symbol"].apply(
-
             lambda x:
             bse_map.get(
                 x,
@@ -252,12 +217,11 @@ if len(results):
         )
 
     except Exception:
-
         pass
 
-    # =====================================
+    # ==========================
     # TRADINGVIEW LINK
-    # =====================================
+    # ==========================
 
     def make_tv_link(sym):
 
@@ -289,9 +253,9 @@ if len(results):
         make_tv_link
     )
 
-    # =====================================
+    # ==========================
     # SORT
-    # =====================================
+    # ==========================
 
     if "PatternDate" in df.columns:
 
@@ -306,15 +270,11 @@ if len(results):
 
         "Symbol",
         "TradingSymbol",
-        "Name",
-        "MarketCapCr",
-        "CMP",
-        "Volume"
+        "Name"
 
     ]:
 
         if col in df.columns:
-
             front_cols.append(col)
 
     other_cols = [
