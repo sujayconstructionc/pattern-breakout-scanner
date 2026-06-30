@@ -3,65 +3,7 @@ import yfinance as yf
 
 # =====================================
 
-# STOCK METRICS
-
-# =====================================
-
-def get_stock_metrics(symbol):
-
-```
-try:
-
-    ticker = yf.Ticker(symbol)
-
-    info = ticker.fast_info
-
-    market_cap = info.get(
-        "market_cap",
-        0
-    )
-
-    cmp = info.get(
-        "lastPrice",
-        0
-    )
-
-    volume = info.get(
-        "lastVolume",
-        0
-    )
-
-    return {
-
-        "MarketCapCr":
-            round(
-                market_cap / 10000000,
-                2
-            ),
-
-        "CMP":
-            round(
-                float(cmp),
-                2
-            ),
-
-        "Volume":
-            int(volume)
-    }
-
-except:
-
-    return {
-
-        "MarketCapCr": 0,
-        "CMP": 0,
-        "Volume": 0
-    }
-```
-
-# =====================================
-
-# CLEAN YF DATA
+# CLEAN YFINANCE DATA
 
 # =====================================
 
@@ -69,10 +11,71 @@ def clean_yf_data(df):
 
 ```
 if isinstance(df.columns, pd.MultiIndex):
-
     df.columns = df.columns.droplevel(1)
 
 return df
+```
+
+# =====================================
+
+# COMPANY INFO
+
+# =====================================
+
+def get_stock_info(symbol):
+
+```
+try:
+
+    tk = yf.Ticker(symbol)
+
+    info = tk.info
+
+    market_cap = info.get(
+        "marketCap",
+        0
+    )
+
+    market_cap_cr = round(
+        market_cap / 10000000,
+        2
+    )
+
+    sector = info.get(
+        "sector",
+        ""
+    )
+
+    industry = info.get(
+        "industry",
+        ""
+    )
+
+    return {
+
+        "MarketCapCr":
+            market_cap_cr,
+
+        "Sector":
+            sector,
+
+        "Industry":
+            industry
+    }
+
+except:
+
+    return {
+
+        "MarketCapCr":
+            0,
+
+        "Sector":
+            "",
+
+        "Industry":
+            ""
+    }
 ```
 
 # =====================================
@@ -106,7 +109,6 @@ def resample_data(df, timeframe="Monthly"):
 if timeframe == "Monthly":
 
     df = df.resample("ME").agg({
-
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -117,7 +119,6 @@ if timeframe == "Monthly":
 elif timeframe == "Quarterly":
 
     df = df.resample("QE").agg({
-
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -128,7 +129,6 @@ elif timeframe == "Quarterly":
 elif timeframe == "6 Month":
 
     monthly = df.resample("ME").agg({
-
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -139,16 +139,12 @@ elif timeframe == "6 Month":
     monthly["Year"] = monthly.index.year
 
     monthly["Half"] = monthly.index.month.map(
-
         lambda x: 1 if x <= 6 else 2
     )
 
     df = monthly.groupby(
-
         ["Year", "Half"]
-
     ).agg({
-
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -163,7 +159,6 @@ elif timeframe == "6 Month":
         if half == 1:
 
             dates.append(
-
                 pd.Timestamp(
                     year=yr,
                     month=6,
@@ -174,7 +169,6 @@ elif timeframe == "6 Month":
         else:
 
             dates.append(
-
                 pd.Timestamp(
                     year=yr,
                     month=12,
@@ -187,7 +181,6 @@ elif timeframe == "6 Month":
 elif timeframe == "1 Year":
 
     df = df.resample("YE").agg({
-
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -211,7 +204,11 @@ bull = ["G", "R", "G", "R", "G"]
 
 bear = ["R", "G", "R", "G", "R"]
 
-return colors == bull or colors == bear
+return (
+    colors == bull
+    or
+    colors == bear
+)
 ```
 
 # =====================================
@@ -221,47 +218,58 @@ return colors == bull or colors == bear
 # =====================================
 
 def scan_pattern_only(
-
-```
 symbol,
 timeframe="Monthly"
-```
-
 ):
 
 ```
 try:
 
-    df = yf.download(
-
+    raw_df = yf.download(
         symbol,
         period="15y",
         progress=False,
         auto_adjust=False
     )
 
-    if df is None or len(df) < 50:
-
+    if raw_df is None or len(raw_df) < 50:
         return []
 
-    df = clean_yf_data(df)
+    raw_df = clean_yf_data(raw_df)
+
+    latest_close = float(
+        raw_df["Close"].iloc[-1]
+    )
+
+    latest_volume = int(
+        raw_df["Volume"].iloc[-1]
+    )
+
+    avg_vol_20 = int(
+        raw_df["Volume"]
+        .tail(20)
+        .mean()
+    )
+
+    rvol = round(
+        latest_volume /
+        avg_vol_20,
+        2
+    ) if avg_vol_20 else 0
+
+    info = get_stock_info(symbol)
 
     df = resample_data(
-        df,
+        raw_df,
         timeframe
     )
 
     if len(df) < 10:
-
         return []
 
     df["Color"] = df.apply(
         candle_color,
         axis=1
-    )
-
-    metrics = get_stock_metrics(
-        symbol
     )
 
     results = []
@@ -276,16 +284,8 @@ try:
 
             results.append({
 
-                "Symbol": symbol,
-
-                "MarketCapCr":
-                    metrics["MarketCapCr"],
-
-                "CMP":
-                    metrics["CMP"],
-
-                "Volume":
-                    metrics["Volume"],
+                "Symbol":
+                    symbol,
 
                 "Timeframe":
                     timeframe,
@@ -310,7 +310,28 @@ try:
                     ),
 
                 "Pattern":
-                    "".join(colors)
+                    "".join(colors),
+
+                "CMP":
+                    latest_close,
+
+                "Volume":
+                    latest_volume,
+
+                "AvgVolume20":
+                    avg_vol_20,
+
+                "RVOL":
+                    rvol,
+
+                "MarketCapCr":
+                    info["MarketCapCr"],
+
+                "Sector":
+                    info["Sector"],
+
+                "Industry":
+                    info["Industry"]
             })
 
     return results
@@ -329,49 +350,60 @@ except Exception as e:
 # =====================================
 
 def scan_symbol(
-
-```
 symbol,
 timeframe="Monthly",
 breakout_mode="Close",
 latest_only=False
-```
-
 ):
 
 ```
 try:
 
-    df = yf.download(
-
+    raw_df = yf.download(
         symbol,
         period="15y",
         progress=False,
         auto_adjust=False
     )
 
-    if df is None or len(df) < 50:
-
+    if raw_df is None or len(raw_df) < 50:
         return []
 
-    df = clean_yf_data(df)
+    raw_df = clean_yf_data(raw_df)
+
+    latest_close = float(
+        raw_df["Close"].iloc[-1]
+    )
+
+    latest_volume = int(
+        raw_df["Volume"].iloc[-1]
+    )
+
+    avg_vol_20 = int(
+        raw_df["Volume"]
+        .tail(20)
+        .mean()
+    )
+
+    rvol = round(
+        latest_volume /
+        avg_vol_20,
+        2
+    ) if avg_vol_20 else 0
+
+    info = get_stock_info(symbol)
 
     df = resample_data(
-        df,
+        raw_df,
         timeframe
     )
 
     if len(df) < 10:
-
         return []
 
     df["Color"] = df.apply(
         candle_color,
         axis=1
-    )
-
-    metrics = get_stock_metrics(
-        symbol
     )
 
     results = []
@@ -385,7 +417,6 @@ try:
         colors = block["Color"].tolist()
 
         if not pattern_match(colors):
-
             continue
 
         pattern_high = block["High"].max()
@@ -393,7 +424,6 @@ try:
         future = df.iloc[i:]
 
         breakout_date = None
-
         breakout_price = None
 
         for idx, row in future.iterrows():
@@ -425,21 +455,12 @@ try:
             if latest_only:
 
                 if breakout_date != latest_bar:
-
                     continue
 
             results.append({
 
-                "Symbol": symbol,
-
-                "MarketCapCr":
-                    metrics["MarketCapCr"],
-
-                "CMP":
-                    metrics["CMP"],
-
-                "Volume":
-                    metrics["Volume"],
+                "Symbol":
+                    symbol,
 
                 "Timeframe":
                     timeframe,
@@ -452,15 +473,40 @@ try:
 
                 "PatternHigh":
                     round(
-                        float(pattern_high),
+                        float(
+                            pattern_high
+                        ),
                         2
                     ),
 
                 "BreakoutPrice":
                     round(
-                        float(breakout_price),
+                        float(
+                            breakout_price
+                        ),
                         2
-                    )
+                    ),
+
+                "CMP":
+                    latest_close,
+
+                "Volume":
+                    latest_volume,
+
+                "AvgVolume20":
+                    avg_vol_20,
+
+                "RVOL":
+                    rvol,
+
+                "MarketCapCr":
+                    info["MarketCapCr"],
+
+                "Sector":
+                    info["Sector"],
+
+                "Industry":
+                    info["Industry"]
             })
 
     return results
