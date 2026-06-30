@@ -10,7 +10,6 @@ import streamlit as st
 @st.cache_data(ttl=86400)
 def get_equity_master():
 
-```
 try:
 
     url = (
@@ -29,7 +28,6 @@ except Exception as e:
     )
 
     return pd.DataFrame()
-```
 
 # =====================================
 
@@ -40,7 +38,6 @@ except Exception as e:
 @st.cache_data(ttl=86400)
 def get_bse_symbol_map():
 
-```
 df = get_equity_master()
 
 if len(df) == 0:
@@ -104,7 +101,6 @@ for _, row in bse.iterrows():
         pass
 
 return symbol_map
-```
 
 # =====================================
 
@@ -115,7 +111,6 @@ return symbol_map
 @st.cache_data(ttl=86400)
 def get_bse_yahoo_symbols():
 
-```
 symbol_map = (
     get_bse_symbol_map()
 )
@@ -123,4 +118,3 @@ symbol_map = (
 return list(
     symbol_map.keys()
 )
-```
