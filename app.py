@@ -6,211 +6,349 @@ from scanner import scan_symbol, scan_pattern_only
 from bse_mapper import get_bse_symbol_map
 
 st.set_page_config(
-    page_title="Pattern Breakout Scanner V4",
-    layout="wide"
+page_title="Pattern Breakout Scanner V5",
+layout="wide"
 )
 
-st.title("📈 Pattern Breakout Scanner V4")
+st.title("📈 Pattern Breakout Scanner V5")
 
-# =========================
+# =====================================
+
 # SIDEBAR
-# =========================
+
+# =====================================
 
 st.sidebar.header("Scanner Filters")
 
 exchange = st.sidebar.selectbox(
-    "Exchange",
-    ["NSE", "BSE", "NSE+BSE"]
+"Exchange",
+["NSE", "BSE", "NSE+BSE"]
 )
 
 timeframe = st.sidebar.selectbox(
-    "Timeframe",
-    [
-        "Monthly",
-        "Quarterly",
-        "6 Month",
-        "1 Year"
-    ]
+"Timeframe",
+[
+"Monthly",
+"Quarterly",
+"6 Month",
+"1 Year"
+]
 )
 
 scan_mode = st.sidebar.radio(
-    "Scan Mode",
-    [
-        "Pattern Only",
-        "Historical Breakout",
-        "Latest Breakout"
-    ]
+"Scan Mode",
+[
+"Pattern Only",
+"Historical Breakout",
+"Latest Breakout"
+]
 )
 
 breakout_mode = st.sidebar.radio(
-    "Breakout Type",
-    [
-        "Close",
-        "High"
-    ]
+"Breakout Type",
+[
+"Close",
+"High"
+]
 )
 
 max_stocks = st.sidebar.number_input(
-    "Max Stocks To Scan",
-    min_value=1,
-    max_value=10000,
-    value=500
+"Max Stocks To Scan",
+min_value=1,
+max_value=20000,
+value=500
 )
 
-scan = st.sidebar.button("SCAN NOW")
+st.sidebar.markdown("---")
 
-# =========================
+st.sidebar.subheader("Market Cap Filter")
+
+min_mcap = st.sidebar.number_input(
+"Min Market Cap (Cr)",
+value=300
+)
+
+max_mcap = st.sidebar.number_input(
+"Max Market Cap (Cr)",
+value=30000
+)
+
+st.sidebar.subheader("Price Filter")
+
+min_price = st.sidebar.number_input(
+"Min CMP",
+value=0.0
+)
+
+max_price = st.sidebar.number_input(
+"Max CMP",
+value=100000.0
+)
+
+st.sidebar.subheader("Volume Filter")
+
+min_volume = st.sidebar.number_input(
+"Min Volume",
+value=0
+)
+
+scan = st.sidebar.button(
+"SCAN NOW"
+)
+
+# =====================================
+
 # SCAN
-# =========================
+
+# =====================================
 
 if scan:
 
-    st.info(f"Loading {exchange} symbols...")
+```
+st.info(
+    f"Loading {exchange} symbols..."
+)
 
-    symbols = get_symbols(exchange)
+symbols = get_symbols(exchange)
 
-    if len(symbols) == 0:
-        st.error("No symbols loaded.")
-        st.stop()
+if len(symbols) == 0:
 
-    symbols = symbols[:max_stocks]
-
-    st.success(
-        f"Symbols Loaded = {len(symbols)}"
+    st.error(
+        "No symbols loaded."
     )
 
-    progress = st.progress(0)
+    st.stop()
 
-    results = []
-    errors = []
+symbols = symbols[:max_stocks]
 
-    total = len(symbols)
+st.success(
+    f"Symbols Loaded = {len(symbols)}"
+)
 
-    for i, symbol in enumerate(symbols):
+progress = st.progress(0)
 
-        try:
+results = []
+errors = []
 
-            if scan_mode == "Pattern Only":
+total = len(symbols)
 
-                rows = scan_pattern_only(
-                    symbol=symbol,
-                    timeframe=timeframe
-                )
+for i, symbol in enumerate(symbols):
 
-            elif scan_mode == "Historical Breakout":
+    try:
 
-                rows = scan_symbol(
-                    symbol=symbol,
-                    timeframe=timeframe,
-                    breakout_mode=breakout_mode,
-                    latest_only=False
-                )
+        if scan_mode == "Pattern Only":
 
-            else:
-
-                rows = scan_symbol(
-                    symbol=symbol,
-                    timeframe=timeframe,
-                    breakout_mode=breakout_mode,
-                    latest_only=True
-                )
-
-            if rows:
-                results.extend(rows)
-
-        except Exception as e:
-
-            errors.append(
-                f"{symbol} -> {e}"
+            rows = scan_pattern_only(
+                symbol=symbol,
+                timeframe=timeframe
             )
 
-        progress.progress(
-            (i + 1) / total
+        elif scan_mode == "Historical Breakout":
+
+            rows = scan_symbol(
+                symbol=symbol,
+                timeframe=timeframe,
+                breakout_mode=breakout_mode,
+                latest_only=False
+            )
+
+        else:
+
+            rows = scan_symbol(
+                symbol=symbol,
+                timeframe=timeframe,
+                breakout_mode=breakout_mode,
+                latest_only=True
+            )
+
+        if rows:
+
+            results.extend(rows)
+
+    except Exception as e:
+
+        errors.append(
+            f"{symbol} -> {e}"
         )
 
-    st.success(
-        f"Scan Completed | Results Found = {len(results)}"
+    progress.progress(
+        (i + 1) / total
     )
 
-    if len(errors):
+st.success(
+    f"Scan Completed | Results Found = {len(results)}"
+)
 
-        with st.expander("Show Errors"):
-            st.write(errors[:100])
+if len(errors):
 
-    if len(results):
+    with st.expander(
+        "Show Errors"
+    ):
 
-        df = pd.DataFrame(results)
+        st.write(
+            errors[:100]
+        )
 
-        try:
+if len(results):
 
-            bse_map = get_bse_symbol_map()
+    df = pd.DataFrame(results)
 
-            df["TradingSymbol"] = df["Symbol"].apply(
-                lambda x: bse_map.get(
-                    x, {}
-                ).get(
-                    "TradingSymbol", ""
-                )
-            )
+    # =====================================
+    # FILTERS
+    # =====================================
 
-            df["Name"] = df["Symbol"].apply(
-                lambda x: bse_map.get(
-                    x, {}
-                ).get(
-                    "Name", ""
-                )
-            )
-
-        except Exception:
-            pass
-
-        if "PatternDate" in df.columns:
-
-            df = df.sort_values(
-                by="PatternDate",
-                ascending=False
-            )
-
-        front_cols = []
-
-        for col in [
-            "Symbol",
-            "TradingSymbol",
-            "Name"
-        ]:
-
-            if col in df.columns:
-                front_cols.append(col)
-
-        other_cols = [
-            c for c in df.columns
-            if c not in front_cols
-        ]
+    if "MarketCapCr" in df.columns:
 
         df = df[
-            front_cols +
-            other_cols
+            (df["MarketCapCr"] >= min_mcap)
+            &
+            (df["MarketCapCr"] <= max_mcap)
         ]
 
-        st.dataframe(
-            df,
-            use_container_width=True
+    if "CMP" in df.columns:
+
+        df = df[
+            (df["CMP"] >= min_price)
+            &
+            (df["CMP"] <= max_price)
+        ]
+
+    if "Volume" in df.columns:
+
+        df = df[
+            df["Volume"] >= min_volume
+        ]
+
+    # =====================================
+    # BSE MAPPING
+    # =====================================
+
+    try:
+
+        bse_map = get_bse_symbol_map()
+
+        df["TradingSymbol"] = df["Symbol"].apply(
+
+            lambda x:
+            bse_map.get(
+                x,
+                {}
+            ).get(
+                "TradingSymbol",
+                ""
+            )
         )
 
-        csv = df.to_csv(
-            index=False
+        df["Name"] = df["Symbol"].apply(
+
+            lambda x:
+            bse_map.get(
+                x,
+                {}
+            ).get(
+                "Name",
+                ""
+            )
         )
 
-        st.download_button(
-            "⬇ Download CSV",
-            csv,
-            file_name="scanner_results.csv",
-            mime="text/csv"
+    except Exception:
+
+        pass
+
+    # =====================================
+    # TRADINGVIEW LINK
+    # =====================================
+
+    def make_tv_link(sym):
+
+        if sym.endswith(".NS"):
+
+            base = sym.replace(
+                ".NS",
+                ""
+            )
+
+            return (
+                f"https://www.tradingview.com/chart/?symbol=NSE:{base}"
+            )
+
+        elif sym.endswith(".BO"):
+
+            base = sym.replace(
+                ".BO",
+                ""
+            )
+
+            return (
+                f"https://www.tradingview.com/chart/?symbol=BSE:{base}"
+            )
+
+        return ""
+
+    df["TradingView"] = df["Symbol"].apply(
+        make_tv_link
+    )
+
+    # =====================================
+    # SORT
+    # =====================================
+
+    if "PatternDate" in df.columns:
+
+        df = df.sort_values(
+            by="PatternDate",
+            ascending=False
         )
 
-    else:
+    front_cols = []
 
-        st.warning(
-            "No Results Found"
-        )
-   
+    for col in [
+
+        "Symbol",
+        "TradingSymbol",
+        "Name",
+        "MarketCapCr",
+        "CMP",
+        "Volume"
+
+    ]:
+
+        if col in df.columns:
+
+            front_cols.append(col)
+
+    other_cols = [
+
+        c for c in df.columns
+
+        if c not in front_cols
+
+    ]
+
+    df = df[
+        front_cols +
+        other_cols
+    ]
+
+    st.dataframe(
+        df,
+        use_container_width=True
+    )
+
+    csv = df.to_csv(
+        index=False
+    )
+
+    st.download_button(
+        "⬇ Download CSV",
+        csv,
+        file_name="scanner_results.csv",
+        mime="text/csv"
+    )
+
+else:
+
+    st.warning(
+        "No Results Found"
+    )
+```
