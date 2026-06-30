@@ -1,78 +1,126 @@
 import pandas as pd
 import streamlit as st
 
+# =====================================
+
+# EQUITY MASTER
+
+# =====================================
 
 @st.cache_data(ttl=86400)
 def get_equity_master():
 
-    try:
+```
+try:
 
-        url = (
-            "https://developer.paytmmoney.com/"
-            "data/v1/scrips/equity_security_master.csv"
-        )
+    url = (
+        "https://developer.paytmmoney.com/"
+        "data/v1/scrips/equity_security_master.csv"
+    )
 
-        return pd.read_csv(url)
+    df = pd.read_csv(url)
 
-    except Exception as e:
+    return df
 
-        st.error(f"Equity Master Error: {e}")
+except Exception as e:
 
-        return pd.DataFrame()
+    st.error(
+        f"Equity Master Error: {e}"
+    )
 
+    return pd.DataFrame()
+```
+
+# =====================================
+
+# BSE SYMBOL MAP
+
+# =====================================
 
 @st.cache_data(ttl=86400)
 def get_bse_symbol_map():
 
-    df = get_equity_master()
+```
+df = get_equity_master()
 
-    if len(df) == 0:
-        return {}
+if len(df) == 0:
 
-    bse = df[
-        df["exchange"]
-        .astype(str)
-        .str.upper()
-        == "BSE"
-    ].copy()
+    return {}
 
-    symbol_map = {}
+bse = df[
 
-    for _, row in bse.iterrows():
+    df["exchange"]
+    .astype(str)
+    .str.upper()
 
-        try:
+    == "BSE"
 
-            code = str(
-                int(
-                    row["security_id"]
-                )
+].copy()
+
+symbol_map = {}
+
+for _, row in bse.iterrows():
+
+    try:
+
+        code = str(
+            int(
+                row["security_id"]
             )
+        )
 
-            if len(code) != 6:
-                continue
+        if len(code) != 6:
+            continue
 
-            yahoo_symbol = f"{code}.BO"
+        yahoo_symbol = (
+            f"{code}.BO"
+        )
 
-            symbol_map[yahoo_symbol] = {
+        symbol_map[
+            yahoo_symbol
+        ] = {
 
-                "Code": code,
+            "Code":
+                code,
 
-                "TradingSymbol":
-                    str(row.get("symbol", "")),
+            "TradingSymbol":
+                str(
+                    row.get(
+                        "symbol",
+                        ""
+                    )
+                ),
 
-                "Name":
-                    str(row.get("name", ""))
-            }
+            "Name":
+                str(
+                    row.get(
+                        "name",
+                        ""
+                    )
+                )
+        }
 
-        except:
-            pass
+    except:
+        pass
 
-    return symbol_map
+return symbol_map
+```
 
+# =====================================
+
+# BSE YAHOO SYMBOL LIST
+
+# =====================================
 
 @st.cache_data(ttl=86400)
 def get_bse_yahoo_symbols():
 
-    symbol_map = get_bse_symbol_map()
+```
+symbol_map = (
+    get_bse_symbol_map()
+)
 
-    return list(symbol_map.keys())
+return list(
+    symbol_map.keys()
+)
+```
