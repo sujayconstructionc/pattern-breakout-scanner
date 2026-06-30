@@ -98,7 +98,6 @@ scan = st.sidebar.button(
 
 if scan:
 
-```
 st.info(
     f"Loading {exchange} symbols..."
 )
@@ -311,4 +310,3 @@ else:
     st.warning(
         "No Results Found"
     )
-```
