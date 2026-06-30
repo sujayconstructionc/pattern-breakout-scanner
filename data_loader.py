@@ -17,7 +17,6 @@ get_bse_yahoo_symbols
 @st.cache_data(ttl=86400)
 def get_nse_symbols():
 
-```
 try:
 
     headers = {
@@ -72,7 +71,6 @@ except Exception as e:
     )
 
     return []
-```
 
 # =====================================
 
@@ -82,9 +80,7 @@ except Exception as e:
 
 def get_bse_symbols():
 
-```
 return get_bse_yahoo_symbols()
-```
 
 # =====================================
 
@@ -94,7 +90,6 @@ return get_bse_yahoo_symbols()
 
 def get_symbols(exchange):
 
-```
 if exchange == "NSE":
 
     return get_nse_symbols()
@@ -118,4 +113,3 @@ elif exchange == "NSE+BSE":
     return merged
 
 return []
-```
