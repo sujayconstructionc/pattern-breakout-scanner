@@ -98,25 +98,78 @@ scan = st.sidebar.button(
 
 if scan:
 
-     st.info(
-    f"Loading {exchange} symbols..."
-)
-
-symbols = get_symbols(exchange)
-
-if len(symbols) == 0:
-
-    st.error(
-        "No symbols loaded."
+    st.info(
+        f"Loading {exchange} symbols..."
     )
 
-    st.stop()
+    symbols = get_symbols(exchange)
 
-symbols = symbols[:max_stocks]
+    if len(symbols) == 0:
 
-st.success(
-    f"Symbols Loaded = {len(symbols)}"
-)
+        st.error(
+            "No symbols loaded."
+        )
+
+        st.stop()
+
+    symbols = symbols[:max_stocks]
+
+    st.success(
+        f"Symbols Loaded = {len(symbols)}"
+    )
+
+    progress = st.progress(0)
+
+    results = []
+    errors = []
+
+    total = len(symbols)
+
+    for i, symbol in enumerate(symbols):
+
+        try:
+
+            if scan_mode == "Pattern Only":
+
+                rows = scan_pattern_only(
+                    symbol=symbol,
+                    timeframe=timeframe
+                )
+
+            elif scan_mode == "Historical Breakout":
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=False
+                )
+
+            else:
+
+                rows = scan_symbol(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    breakout_mode=breakout_mode,
+                    latest_only=True
+                )
+
+            if rows:
+                results.extend(rows)
+
+        except Exception as e:
+
+            errors.append(
+                f"{symbol} -> {e}"
+            )
+
+        progress.progress(
+            (i + 1) / total
+        )
+
+    st.success(
+        f"Scan Completed | Results Found = {len(results)}"
+    )
 
 progress = st.progress(0)
 
