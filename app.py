@@ -98,7 +98,7 @@ scan = st.sidebar.button(
 
 if scan:
 
-st.info(
+     st.info(
     f"Loading {exchange} symbols..."
 )
 
