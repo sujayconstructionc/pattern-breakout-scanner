@@ -3,113 +3,96 @@ import streamlit as st
 import requests
 
 from io import StringIO
+from bse_mapper import get_bse_yahoo_symbols
 
-from bse_mapper import (
-get_bse_yahoo_symbols
-)
 
 # =====================================
-
 # NSE SYMBOLS
-
 # =====================================
 
 @st.cache_data(ttl=86400)
 def get_nse_symbols():
 
-try:
+    try:
 
-    headers = {
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
 
-        "User-Agent":
-            "Mozilla/5.0"
-    }
-
-    url = (
-        "https://archives.nseindia.com/"
-        "content/equities/EQUITY_L.csv"
-    )
-
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=30
-    )
-
-    response.raise_for_status()
-
-    df = pd.read_csv(
-        StringIO(
-            response.text
+        url = (
+            "https://archives.nseindia.com/"
+            "content/equities/EQUITY_L.csv"
         )
-    )
 
-    symbols = (
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=30
+        )
 
-        df["SYMBOL"]
+        response.raise_for_status()
 
-        .dropna()
+        df = pd.read_csv(
+            StringIO(response.text)
+        )
 
-        .astype(str)
+        symbols = (
+            df["SYMBOL"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
 
-        .unique()
+        return [
+            f"{s}.NS"
+            for s in symbols
+        ]
 
-        .tolist()
-    )
+    except Exception as e:
 
-    return [
+        st.error(
+            f"NSE Error: {e}"
+        )
 
-        f"{s}.NS"
+        return []
 
-        for s in symbols
-    ]
-
-except Exception as e:
-
-    st.error(
-        f"NSE Error: {e}"
-    )
-
-    return []
 
 # =====================================
-
 # BSE SYMBOLS
-
 # =====================================
 
 def get_bse_symbols():
 
-return get_bse_yahoo_symbols()
+    return get_bse_yahoo_symbols()
+
 
 # =====================================
-
 # MERGE
-
 # =====================================
 
 def get_symbols(exchange):
 
-if exchange == "NSE":
+    if exchange == "NSE":
 
-    return get_nse_symbols()
+        return get_nse_symbols()
 
-elif exchange == "BSE":
+    elif exchange == "BSE":
 
-    return get_bse_symbols()
+        return get_bse_symbols()
 
-elif exchange == "NSE+BSE":
+    elif exchange == "NSE+BSE":
 
-    nse = get_nse_symbols()
+        nse = get_nse_symbols()
 
-    bse = get_bse_symbols()
+        bse = get_bse_symbols()
 
-    merged = list(
-        dict.fromkeys(
-            nse + bse
+        merged = list(
+            dict.fromkeys(
+                nse + bse
+            )
         )
-    )
 
-    return merged
+        return merged
 
-return []
+    return []
