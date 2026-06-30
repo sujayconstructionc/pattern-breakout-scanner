@@ -9,10 +9,12 @@ import yfinance as yf
 
 def clean_yf_data(df):
 
+
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = df.columns.droplevel(1)
 
 return df
+
 
 # =====================================
 
@@ -21,6 +23,7 @@ return df
 # =====================================
 
 def get_stock_info(symbol):
+
 
 try:
 
@@ -60,7 +63,7 @@ try:
             industry
     }
 
-except:
+except Exception:
 
     return {
 
@@ -74,6 +77,7 @@ except:
             ""
     }
 
+
 # =====================================
 
 # CANDLE COLOR
@@ -81,6 +85,7 @@ except:
 # =====================================
 
 def candle_color(row):
+
 
 if row["Close"] > row["Open"]:
     return "G"
@@ -91,6 +96,7 @@ elif row["Close"] < row["Open"]:
 else:
     return "D"
 
+
 # =====================================
 
 # RESAMPLE
@@ -98,6 +104,7 @@ else:
 # =====================================
 
 def resample_data(df, timeframe="Monthly"):
+
 
 if timeframe == "Monthly":
 
@@ -183,6 +190,7 @@ elif timeframe == "1 Year":
 
 return df.dropna()
 
+
 # =====================================
 
 # PATTERN MATCH
@@ -191,8 +199,8 @@ return df.dropna()
 
 def pattern_match(colors):
 
-bull = ["G", "R", "G", "R", "G"]
 
+bull = ["G", "R", "G", "R", "G"]
 bear = ["R", "G", "R", "G", "R"]
 
 return (
@@ -200,6 +208,7 @@ return (
     or
     colors == bear
 )
+
 
 # =====================================
 
@@ -211,6 +220,7 @@ def scan_pattern_only(
 symbol,
 timeframe="Monthly"
 ):
+
 
 try:
 
@@ -273,14 +283,9 @@ try:
 
             results.append({
 
-                "Symbol":
-                    symbol,
-
-                "Timeframe":
-                    timeframe,
-
-                "PatternDate":
-                    block.index[-1],
+                "Symbol": symbol,
+                "Timeframe": timeframe,
+                "PatternDate": block.index[-1],
 
                 "PatternHigh":
                     round(
@@ -331,6 +336,7 @@ except Exception as e:
 
     return []
 
+
 # =====================================
 
 # BREAKOUT SCAN
@@ -343,6 +349,7 @@ timeframe="Monthly",
 breakout_mode="Close",
 latest_only=False
 ):
+
 
 try:
 
@@ -432,9 +439,7 @@ try:
             if cond:
 
                 breakout_date = idx
-
                 breakout_price = row["Close"]
-
                 break
 
         if breakout_date:
@@ -446,31 +451,20 @@ try:
 
             results.append({
 
-                "Symbol":
-                    symbol,
-
-                "Timeframe":
-                    timeframe,
-
-                "PatternDate":
-                    block.index[-1],
-
-                "BreakoutDate":
-                    breakout_date,
+                "Symbol": symbol,
+                "Timeframe": timeframe,
+                "PatternDate": block.index[-1],
+                "BreakoutDate": breakout_date,
 
                 "PatternHigh":
                     round(
-                        float(
-                            pattern_high
-                        ),
+                        float(pattern_high),
                         2
                     ),
 
                 "BreakoutPrice":
                     round(
-                        float(
-                            breakout_price
-                        ),
+                        float(breakout_price),
                         2
                     ),
 
@@ -503,3 +497,4 @@ except Exception as e:
     print(symbol, e)
 
     return []
+
