@@ -9,12 +9,10 @@ import yfinance as yf
 
 def clean_yf_data(df):
 
-```
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = df.columns.droplevel(1)
 
 return df
-```
 
 # =====================================
 
@@ -24,7 +22,6 @@ return df
 
 def get_stock_info(symbol):
 
-```
 try:
 
     tk = yf.Ticker(symbol)
@@ -76,7 +73,6 @@ except:
         "Industry":
             ""
     }
-```
 
 # =====================================
 
@@ -86,7 +82,6 @@ except:
 
 def candle_color(row):
 
-```
 if row["Close"] > row["Open"]:
     return "G"
 
@@ -95,7 +90,6 @@ elif row["Close"] < row["Open"]:
 
 else:
     return "D"
-```
 
 # =====================================
 
@@ -105,7 +99,6 @@ else:
 
 def resample_data(df, timeframe="Monthly"):
 
-```
 if timeframe == "Monthly":
 
     df = df.resample("ME").agg({
@@ -189,7 +182,6 @@ elif timeframe == "1 Year":
     })
 
 return df.dropna()
-```
 
 # =====================================
 
@@ -199,7 +191,6 @@ return df.dropna()
 
 def pattern_match(colors):
 
-```
 bull = ["G", "R", "G", "R", "G"]
 
 bear = ["R", "G", "R", "G", "R"]
@@ -209,7 +200,6 @@ return (
     or
     colors == bear
 )
-```
 
 # =====================================
 
@@ -222,7 +212,6 @@ symbol,
 timeframe="Monthly"
 ):
 
-```
 try:
 
     raw_df = yf.download(
@@ -341,7 +330,6 @@ except Exception as e:
     print(symbol, e)
 
     return []
-```
 
 # =====================================
 
@@ -356,7 +344,6 @@ breakout_mode="Close",
 latest_only=False
 ):
 
-```
 try:
 
     raw_df = yf.download(
@@ -516,4 +503,3 @@ except Exception as e:
     print(symbol, e)
 
     return []
-```
